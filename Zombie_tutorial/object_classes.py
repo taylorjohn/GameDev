@@ -1,8 +1,9 @@
 
-
+#   Things that neeeded to be imported
 import pygame
 from tileC import Tile
-from random import randint 
+from random import randint
+
 
 class Character(pygame.Rect):
 
@@ -17,16 +18,14 @@ class Character(pygame.Rect):
         return str(self.get_number())
 
     def set_target(self, next_tile):
-        if self.tx == None and self.ty == None:
+        if self.tx is None and self.ty is None:
             self.tx = next_tile.x
             self.ty = next_tile.y
 
     def get_number(self):
-        
         return ((self.x / self.width) + Tile.H) + ((self.y / self.height) * Tile.V)
 
     def get_tile(self):
-
         return Tile.get_tile(self.get_number())
 
     def rotate(self, direction, original_img):
@@ -34,13 +33,13 @@ class Character(pygame.Rect):
         if direction == 'n':
             if self.direction != 'n':
                 self.direction = 'n'
-                south = pygame.transform.rotate(original_img, 90) # CCW
+                south = pygame.transform.rotate(original_img, 90)   # CCW
                 self.img = pygame.transform.flip(south, False, True)
 
         if direction == 's':
             if self.direction != 's':
                 self.direction = 's'
-                self.img = pygame.transform.rotate(original_img, 90) # CCW
+                self.img = pygame.transform.rotate(original_img, 90)  # CCW
 
         if direction == 'e':
             if self.direction != 'e':
@@ -52,10 +51,11 @@ class Character(pygame.Rect):
                 self.direction = 'w'
                 self.img = original_img
 
+
 class Zombie(Character):
 
     List = []
-    spawn_tiles = (9,42,91,134,193,219,274)
+    spawn_tiles = (9, 42, 91, 134, 193, 219, 274)
     original_img = pygame.image.load('zombie.png')
     health = 100
 
@@ -79,25 +79,25 @@ class Zombie(Character):
     @staticmethod
     def movement():
         for zombie in Zombie.List:
-            if zombie.tx != None and zombie.ty != None: # Target is set
+            if zombie.tx is not None and zombie.ty is not None:  # Target set
 
                 X = zombie.x - zombie.tx
                 Y = zombie.y - zombie.ty
 
                 vel = 4
-                if X < 0: # --->
+                if X < 0:  # --->
                     zombie.x += vel
                     zombie.rotate('e', Zombie.original_img)
 
-                elif X > 0: # <----
+                elif X > 0:  # <----
                     zombie.x -= vel
                     zombie.rotate('w', Zombie.original_img)
 
-                if Y > 0: # up
+                if Y > 0:  # up
                     zombie.y -= vel
                     zombie.rotate('n', Zombie.original_img)
 
-                elif Y < 0: # dopwn
+                elif Y < 0:  # dopwn
                     zombie.y += vel
                     zombie.rotate('s', Zombie.original_img)
 
@@ -131,7 +131,7 @@ class Survivor(Character):
 
     def __init__(self, x, y):
 
-        self.current = 0 # 0 -> pistol, 1 -> shotgun, 2 -> automatic
+        self.current = 0  # 0 -> pistol, 1 -> shotgun, 2 -> automatic
         self.direction = 'w'
         self.img = pygame.image.load('survivor_w.png')
 
@@ -147,26 +147,32 @@ class Survivor(Character):
             return 'automatic'
 
     def movement(self):
-
-        if self.tx != None and self.ty != None: # Target is set
-
+        # self target x-axis & y-axis
+        if self.tx is not None and self.ty is not None:  # Target is set
+            #   x-axis is a horizontal line x position minus the target x position
             X = self.x - self.tx
+            #   y-axis is a vertical line y position minus the target y position
             Y = self.y - self.ty
-
+            #   velocity in the game
             vel = 8
-
-            if X < 0: # --->
+            #   If horizontal position is less then zero
+            if X < 0:  # --->
+                # move horizontal at velocity
                 self.x += vel
-            elif X > 0: # <----
+            #   if horizontal ppsition is greater then zero
+            elif X > 0:  # <----
+                #   move horizontal at neg velocity
                 self.x -= vel
-
-            if Y > 0: # up
+            #   If vertical position is less then zero
+            if Y > 0:  # up
+                #   move vertical at velocity
                 self.y -= vel
-            elif Y < 0: # dopwn
+            elif Y < 0:  # down
                 self.y += vel
-
+            
             if X == 0 and Y == 0:
                 self.tx, self.ty = None, None
+
 
     def draw(self, screen):
 
@@ -174,17 +180,17 @@ class Survivor(Character):
 
         h = self.width / 2
         img = Survivor.guns_img[self.current]
-
+        #   If direction is w display screen image horizontal post, vert position plus self.width divided by 2
         if self.direction == 'w':
             screen.blit(img, (self.x, self.y + h))
 
         elif self.direction == 'e':
             img = pygame.transform.flip(img, True, False)
-            screen.blit(img, (self.x + h, self.y + h))            
+            screen.blit(img, (self.x + h, self.y + h))
 
         elif self.direction == 's':
-            img = pygame.transform.rotate(img, 90) # CCW
-            screen.blit(img, (self.x + h, self.y + h))            
+            img = pygame.transform.rotate(img, 90)  # CCW
+            screen.blit(img, (self.x + h, self.y + h))
 
         elif self.direction == 'n':
             south = pygame.transform.rotate(img, 90)
@@ -216,6 +222,7 @@ class Survivor(Character):
                 self.direction = 'w'
                 self.img = pygame.image.load(path + self.direction + png)
 
+
 class Bullet(pygame.Rect):
     
     width, height = 7, 10
@@ -223,11 +230,11 @@ class Bullet(pygame.Rect):
 
     imgs = { 'pistol' : pygame.image.load('pistol_b.png'),
             'shotgun' : pygame.image.load('shotgun_b.png'),
-            'automatic' : pygame.image.load('automatic_b.png') }
+            'automatic' : pygame.image.load('automatic_b.png')}
 
     gun_dmg = {'pistol' : (Zombie.health / 3) + 1,
                 'shotgun' : Zombie.health / 2,
-                'automatic' : (Zombie.health / 6) + 1 }
+                'automatic' : (Zombie.health / 6) + 1}
 
     def __init__(self, x, y, velx, vely, direction, type_):
 
@@ -276,12 +283,11 @@ class Bullet(pygame.Rect):
             return True
         elif self.y < 0:
             return True
-        elif self.x + self.width > screen.get_width(): # -->
+        elif self.x + self.width > screen.get_width():  # -->
             return True
         elif self.y + self.height > screen.get_height():
             return True
         return False
-
 
     @staticmethod
     def super_massive_jumbo_loop(screen):
@@ -291,7 +297,7 @@ class Bullet(pygame.Rect):
             bullet.x += bullet.velx
             bullet.y += bullet.vely
 
-            screen.blit(bullet.img, (bullet.x , bullet.y))
+            screen.blit(bullet.img, (bullet.x, bullet.y))
 
             if bullet.offscreen(screen):
                 Bullet.List.remove(bullet)
@@ -302,14 +308,14 @@ class Bullet(pygame.Rect):
 
                     """
                     The same bullet cannot be used to kill
-                    multiple zombies and as the bullet was 
+                    multiple zombies and as the bullet was
                     no longer in Bullet.List error was raised
                     """
 
-                    zombie.health -= Bullet.gun_dmg[bullet.type]                
+                    zombie.health -= Bullet.gun_dmg[bullet.type]
                     Bullet.List.remove(bullet)
                     break
-
+                    
             for tile in Tile.List:
                 
                 if bullet.colliderect(tile) and not(tile.walkable):
@@ -317,4 +323,3 @@ class Bullet(pygame.Rect):
                         Bullet.List.remove(bullet)
                     except:
                         break # if bullet cannot be removed, then GTFO
-
