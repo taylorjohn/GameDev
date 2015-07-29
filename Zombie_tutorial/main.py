@@ -24,24 +24,27 @@ pygame.mixer.music.play(-1)
 #   Initialize a window or screen for display
 screen = pygame.display.set_mode((704, 448))  # 32, 32 tiles are 32 by 32
 
+# pre start up tiles?
 Tile.pre_init(screen)
 
 #   Create an object to help track time
 clock = pygame.time.Clock()
 #    This number controls the clock tick clock.tick(FPS)
 FPS = 20
+# keep count of frames
 total_frames = 0
+# loads background image dungeon
 dungeon = pygame.image.load('dungeon.jpg')
-survivor = Survivor(32 * 2, 32 * 4)
-
+# the player image called survivor
+survivor = Survivor(32*2, 32*4)
 
 while True:
-    #   draw images to the screen screen.blit(sourceSurface, destinationRect, optionalSourceRect)
-    #   this draws the background image dungeon to the screen at position 0,0
-    screen.blit(dungeon, (0,0) )
-    #   calls the zombie character object class spawn 
+    # screen.blit(sourceSurface, destinationRect, optionalSourceRect)
+    # this draws the background image dungeon to the screen at position 0,0
+    screen.blit(dungeon, (0, 0))
+    #   calls the zombie character object class spawn
     Zombie.spawn(total_frames, FPS)
-    #   calls the zombie character object class movement 
+    #   calls the zombie character object class movement
     Zombie.movement()
     #   calls the surivor or player character object class movement
     survivor.movement()
@@ -51,10 +54,16 @@ while True:
     A_Star(screen, survivor, total_frames, FPS)
     interaction(screen, survivor)
 
+    #draws the survivor or player to the screen
     survivor.draw(screen)
+
+    #draws the zombies to te screen
     Zombie.draw_zombies(screen)
-     
+
     #   Update the full display Surface to the screen
     pygame.display.flip()
+    # the clock tick is equal to the FPS frames per second 20
     clock.tick(FPS)
+    # Add one to the total frames
     total_frames += 1
+    

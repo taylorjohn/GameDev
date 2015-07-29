@@ -1,7 +1,6 @@
 import pygame
-from object_classes import *
 from tileC import Tile
-
+from object_classes import *
 
 def A_Star(screen, survivor, total_frames, FPS):
 
@@ -45,13 +44,11 @@ def A_Star(screen, survivor, total_frames, FPS):
         diagonals = [onn + NE, onn + NW, onn + SE, onn + SW]
 
         for tile_number in array:
-
             surrounding_tile = Tile.get_tile(tile_number)
-            
             if tile_number not in range(1, Tile.total_tiles + 1):
                 continue
 
-            if surrounding_tile.walkable and surrounding_tile not in closed_list:
+            if (surrounding_tile.walkable and surrounding_tile not in closed_list):
                 # tiles.append(surrounding_tile) # Diagonal movement
                 tiles = blocky(tiles, diagonals, surrounding_tile)
 
@@ -170,12 +167,12 @@ def A_Star(screen, survivor, total_frames, FPS):
 
             parent = parent.parent
 
-            if parent == None:
+            if parent is None:
                 break
 
             if parent.number == zombie.get_number():
                 break
-                
+
         if len(return_tiles) > 1:
             next_tile = return_tiles[-1]
             zombie.set_target(next_tile)

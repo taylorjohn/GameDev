@@ -2,7 +2,7 @@ import pygame
 
 
 def text_to_screen(screen, text, x, y, size = 15,
-   color = (255, 255, 255), font_type = 'monospace'):
+    color = (255, 255, 255), font_type = 'monospace'):
 
     try:
 
@@ -13,4 +13,3 @@ def text_to_screen(screen, text, x, y, size = 15,
     except Exception as e:
         print('Font Error, saw it coming')
         raise e
-        
