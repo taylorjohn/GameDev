@@ -1,0 +1,767 @@
+
+--------------------------------------------------------------------------------------------------
+main.py
+--------------------------------------------------------------------------------------------------
+
+
+import pygame, sys, Funk
+from tileC import Tile
+from object_classes import *
+from interaction import interaction
+from A_Star import A_Star
+
+
+pygame.init()
+pygame.font.init()
+pygame.mixer.init()
+
+pygame.mixer.music.load('audio/zombie_theme.ogg')
+pygame.mixer.music.play(-1)
+
+screen = pygame.display.set_mode((704, 448)) # 32, 32
+
+for y in range(0, screen.get_height(), 32):
+    for x in range(0, screen.get_width(), 32):
+        if Tile.total_tiles in Tile.invalids:
+            Tile(x, y, 'solid')
+        else:
+            Tile(x, y, 'empty')
+
+
+clock = pygame.time.Clock()
+FPS = 20
+total_frames = 0
+dungeon = pygame.image.load('images/dungeon.jpg')
+survivor = Survivor(32 * 2, 32 * 4)
+
+
+while True:
+
+    screen.blit(dungeon, (0,0) )
+
+    Zombie.spawn(total_frames, FPS)
+    Zombie.movement()
+
+    survivor.movement()
+
+    Bullet.super_massive_jumbo_loop(screen)
+
+    A_Star(screen, survivor, total_frames, FPS)
+    interaction(screen, survivor)
+    Tile.draw_tiles(screen)
+    survivor.draw(screen)
+    Zombie.draw_zombies(screen)
+
+    pygame.display.flip()
+    clock.tick(FPS)
+    total_frames += 1
+
+
+--------------------------------------------------------------------------------------------------
+A_Star.py
+--------------------------------------------------------------------------------------------------
+
+import pygame
+from object_classes import *
+from tileC import Tile
+
+def A_Star(screen, survivor, total_frames, FPS):
+    
+    half = Tile.width / 2
+
+    N = -22
+    S = 22
+    E = 1
+    W = -1
+
+    NW = -23
+    NE = -21
+    SE = 23
+    SW = 21
+
+    for tile in Tile.List:
+        tile.parent = None
+        tile.H, tile.G, tile.F = 0,0,0
+
+    def blocky(tiles, diagonals, surrounding_node):
+        if surrounding_node.number not in diagonals:
+            tiles.append(surrounding_node)
+        return tiles
+
+    def get_surrounding_tiles(base_node):
+        
+        array =(
+            (base_node.number + N),
+            (base_node.number + NE),
+            (base_node.number + E),
+            (base_node.number + SE),
+            (base_node.number + S),
+            (base_node.number + SW),
+            (base_node.number + W),
+            (base_node.number + NW),
+            )
+
+        tiles = []
+
+        onn = base_node.number 
+        diagonals = [onn + NE, onn + NW, onn + SE, onn + SW]
+
+        for tile_number in array:
+
+            surrounding_tile = Tile.get_tile(tile_number)
+            
+            if tile_number not in range(1, Tile.total_tiles + 1):
+                continue
+
+            if surrounding_tile.walkable and surrounding_tile not in closed_list:
+                # tiles.append(surrounding_tile) # Diagonal movement
+                tiles = blocky(tiles, diagonals, surrounding_tile)
+
+        return tiles
+
+    def G(tile):
+        
+        diff = tile.number - tile.parent.number
+
+        if diff in (N, S, E, W):
+            tile.G = tile.parent.G + 10
+        elif diff in (NE, NW, SW, SE):
+            tile.G = tile.parent.G + 14
+
+    def H():
+        for tile in Tile.List:
+            tile.H = 10 * (abs(tile.x - survivor.x) + abs(tile.y - survivor.y)) / Tile.width
+
+    def F(tile):
+        # F = G + H
+        tile.F = tile.G + tile.H
+
+    def swap(tile):
+        open_list.remove(tile)
+        closed_list.append(tile)
+
+    def get_LFT(): # get Lowest F Value
+
+        F_Values = []
+        for tile in open_list:
+            F_Values.append(tile.F)
+
+        o = open_list[::-1]
+
+        for tile in o:
+            if tile.F == min(F_Values):
+                return tile
+
+    def move_to_G_cost(LFT, tile):
+
+        GVal = 0
+        diff = LFT.number - tile.number
+
+        if diff in (N, S, E, W):
+            GVal = LFT.G + 10
+        elif diff in (NE, NW, SE, SW):
+            GVal = LFT.G + 14
+
+        return GVal
+
+    def loop():
+
+        LFT = get_LFT() 
+
+        swap(LFT)
+        surrounding_nodes = get_surrounding_tiles(LFT)
+
+        for node in surrounding_nodes:
+
+            if node not in open_list:
+
+                open_list.append(node)
+                node.parent = LFT
+
+            elif node in open_list:
+                
+                calculated_G = move_to_G_cost(LFT, node)
+                if calculated_G < node.G:
+
+                    node.parent = LFT
+                    G(node)
+                    F(node)
+
+        if open_list == [] or survivor.get_tile() in closed_list:
+            return
+
+        for node in open_list:
+            G(node)
+            F(node)
+
+            # pygame.draw.line(screen, [255, 0, 0],
+            # [node.parent.x + half, node.parent.y + half],
+            # [node.x + half, node.y + half] )
+
+        loop()
+
+        
+
+    for zombie in Zombie.List:
+
+        if zombie.tx != None or zombie.ty != None:
+            continue
+
+        open_list = []
+        closed_list = []
+
+        zombie_tile = zombie.get_tile()
+        open_list.append(zombie_tile)
+
+        surrounding_nodes = get_surrounding_tiles(zombie_tile)
+
+        for node in surrounding_nodes:
+            node.parent = zombie_tile
+            open_list.append(node)      
+
+        swap(zombie_tile)
+
+        H()
+
+        for node in surrounding_nodes:
+            G(node)
+            F(node) 
+
+        loop()
+
+        return_tiles = []
+
+        parent = survivor.get_tile()
+
+        while True:
+
+            return_tiles.append(parent)
+
+            parent = parent.parent
+
+            if parent == None:
+                break
+
+            if parent.number == zombie.get_number():
+                break
+
+        for tile in return_tiles:
+            pygame.draw.circle(screen, [34, 95, 200],
+            [tile.x + half - 2, tile.y + half - 2], 5 )
+
+        if len(return_tiles) > 1:
+            next_tile = return_tiles[-1]
+            zombie.set_target(next_tile)
+
+
+------------------------------------------------------------------------------------------
+tileC.py
+------------------------------------------------------------------------------------------
+
+import pygame, Funk
+
+class Tile(pygame.Rect):
+
+    List = []
+    width, height = 32, 32
+    total_tiles = 1
+    H, V = 1, 22 
+
+    invalids = [1,2,3,4,5,6,7,8,10,11,12,13,14,20,21,22,
+    23,26,28,29,30,32,35,36,41,44,
+    45,58,59,61,62,64,66,
+    67,70,77,78,88,
+    89,92,94,95,99,100,102,103,105,106,107,108,110,
+    111,112,113,117,119,124,128,
+    133,139,141,142,143,146,152,154,
+    155,156,157,158,159,168,172,174,176,
+    177,181,182,184,187,188,189,190,191,192,194,197,198,
+    199,204,206,208,209,212,214,215,220,
+    221,241,242,
+    243,251,264,
+    265,270,273,275,278,280,281,283,285,286,
+    287,288,289,290,291,292,293,294,295,296,297,298,299,
+    300,301,302,303,304,305,306,307,308]
+
+
+    def __init__(self, x, y, Type):
+
+        self.parent = None
+        self.H, self.G, self.F = 0,0,0
+
+        self.type = Type
+        self.number = Tile.total_tiles
+        Tile.total_tiles += 1
+
+        if Type == 'empty':
+            self.walkable = True
+        else:
+            self.walkable = False
+
+        pygame.Rect.__init__(self, (x, y) , (Tile.width, Tile.height) )
+
+        Tile.List.append(self)
+
+    @staticmethod
+    def get_tile(number):
+        for tile in Tile.List:
+            if tile.number == number:
+                return tile
+
+    @staticmethod
+    def draw_tiles(screen):
+        half = Tile.width / 2
+
+        for tile in Tile.List:
+
+            pass
+
+            # if not(tile.type == 'empty'):
+            #     pygame.draw.rect(screen, [40, 40, 40], tile )
+
+            # if tile.G != 0:
+            #   Funk.text_to_screen(screen, tile.G, tile.x, tile.y + half, color = [120, 157, 40])
+            # if tile.H != 0:
+            #   Funk.text_to_screen(screen, tile.H, tile.x + half, tile.y + half, color = [20 , 67, 150])
+            # if tile.F != 0:
+            #   Funk.text_to_screen(screen, tile.F, tile.x + half, tile.y, color = [56, 177, 177])
+
+            # Funk.text_to_screen(screen, tile.number, tile.x, tile.y)
+
+
+------------------------------------------------------------------------------------------
+object_classes.py
+------------------------------------------------------------------------------------------
+
+
+import pygame
+from tileC import Tile
+from random import randint 
+
+class Character(pygame.Rect):
+
+    width, height = 32, 32
+
+    def __init__(self, x, y):
+
+        self.tx, self.ty = None, None
+        pygame.Rect.__init__(self, x, y, Character.width, Character.height)
+
+    def __str__(self):
+        return str(self.get_number())
+
+    def set_target(self, next_tile):
+        if self.tx == None and self.ty == None:
+            self.tx = next_tile.x
+            self.ty = next_tile.y
+
+    def get_number(self):
+        
+        return ((self.x / self.width) + Tile.H) + ((self.y / self.height) * Tile.V)
+
+    def get_tile(self):
+
+        return Tile.get_tile(self.get_number())
+
+    def rotate(self, direction, original_img):
+
+        if direction == 'n':
+            if self.direction != 'n':
+                self.direction = 'n'
+                south = pygame.transform.rotate(original_img, 90) # CCW
+                self.img = pygame.transform.flip(south, False, True)
+
+        if direction == 's':
+            if self.direction != 's':
+                self.direction = 's'
+                self.img = pygame.transform.rotate(original_img, 90) # CCW
+
+        if direction == 'e':
+            if self.direction != 'e':
+                self.direction = 'e'
+                self.img = pygame.transform.flip(original_img, True, False)
+
+        if direction == 'w':
+            if self.direction != 'w':
+                self.direction = 'w'
+                self.img = original_img
+
+class Zombie(Character):
+
+    List = []
+    spawn_tiles = (9,42,91,134,193,219,274)
+    original_img = pygame.image.load('images/zombie.png')
+    health = 100
+
+
+    def __init__(self, x, y):
+
+        self.direction = 'w'
+        self.health = Zombie.health
+        self.img = Zombie.original_img
+        Character.__init__(self, x, y)
+        Zombie.List.append(self)
+
+    @staticmethod
+    def draw_zombies(screen):
+        for zombie in Zombie.List:
+            screen.blit(zombie.img, (zombie.x, zombie.y))
+
+            if zombie.health <= 0:
+                Zombie.List.remove(zombie)
+
+    @staticmethod
+    def movement():
+        for zombie in Zombie.List:
+            if zombie.tx != None and zombie.ty != None: # Target is set
+
+                X = zombie.x - zombie.tx
+                Y = zombie.y - zombie.ty
+
+                vel = 4
+                if X < 0: # --->
+                    zombie.x += vel
+                    zombie.rotate('e', Zombie.original_img)
+
+                elif X > 0: # <----
+                    zombie.x -= vel
+                    zombie.rotate('w', Zombie.original_img)
+
+                if Y > 0: # up
+                    zombie.y -= vel
+                    zombie.rotate('n', Zombie.original_img)
+
+                elif Y < 0: # dopwn
+                    zombie.y += vel
+                    zombie.rotate('s', Zombie.original_img)
+
+                if X == 0 and Y == 0:
+                    zombie.tx, zombie.ty = None, None
+ 
+    @staticmethod
+    def spawn(total_frames, FPS):
+        if total_frames % (FPS) == 0:
+
+            if total_frames % (FPS * 6) == 0:
+
+                r = randint(0, 2)
+                sounds = [pygame.mixer.Sound('audio/zs1.ogg'),
+                        pygame.mixer.Sound('audio/zs2.ogg'),
+                        pygame.mixer.Sound('audio/zs3.ogg')]
+                sound = sounds[ r ]
+                sound.play()
+
+            r = randint(0, len(Zombie.spawn_tiles) - 1)
+            tile_num = Zombie.spawn_tiles[r]
+            spawn_node = Tile.get_tile(tile_num)
+            Zombie(spawn_node.x, spawn_node.y)
+
+
+class Survivor(Character):
+
+    guns_img =[pygame.image.load('images/pistol.png'),
+                pygame.image.load('images/shotgun.png'),
+                pygame.image.load('images/automatic.png')]
+
+    def __init__(self, x, y):
+
+        self.current = 0 # 0 -> pistol, 1 -> shotgun, 2 -> automatic
+        self.direction = 'w'
+        self.img = pygame.image.load('images/survivor_w.png')
+
+        Character.__init__(self, x, y)
+
+    def get_bullet_type(self):
+
+        if self.current == 0:
+            return 'pistol'
+        elif self.current == 1:
+            return 'shotgun'
+        elif self.current == 2:
+            return 'automatic'
+
+    def movement(self):
+
+        if self.tx != None and self.ty != None: # Target is set
+
+            X = self.x - self.tx
+            Y = self.y - self.ty
+
+            vel = 8
+
+            if X < 0: # --->
+                self.x += vel
+            elif X > 0: # <----
+                self.x -= vel
+
+            if Y > 0: # up
+                self.y -= vel
+            elif Y < 0: # dopwn
+                self.y += vel
+
+            if X == 0 and Y == 0:
+                self.tx, self.ty = None, None
+
+    def draw(self, screen):
+
+        screen.blit(self.img, (self.x, self.y))
+
+        h = self.width / 2
+        img = Survivor.guns_img[self.current]
+
+        if self.direction == 'w':
+            screen.blit(img, (self.x, self.y + h))
+
+        elif self.direction == 'e':
+            img = pygame.transform.flip(img, True, False)
+            screen.blit(img, (self.x + h, self.y + h))            
+
+        elif self.direction == 's':
+            img = pygame.transform.rotate(img, 90) # CCW
+            screen.blit(img, (self.x + h, self.y + h))            
+
+        elif self.direction == 'n':
+            south = pygame.transform.rotate(img, 90)
+            img = pygame.transform.flip(south, False, True)
+            screen.blit(img, (self.x + h, self.y - h))
+
+    def rotate(self, direction):
+
+        path = 'images/survivor_'
+        png = '.png'
+
+        if direction == 'n':
+            if self.direction != 'n':
+                self.direction = 'n'
+                self.img = pygame.image.load(path + self.direction + png)
+
+        if direction == 's':
+            if self.direction != 's':
+                self.direction = 's'
+                self.img = pygame.image.load(path + self.direction + png)
+
+        if direction == 'e':
+            if self.direction != 'e':
+                self.direction = 'e'
+                self.img = pygame.image.load(path + self.direction + png)
+
+        if direction == 'w':
+            if self.direction != 'w':
+                self.direction = 'w'
+                self.img = pygame.image.load(path + self.direction + png)
+
+class Bullet(pygame.Rect):
+    
+    width, height = 7, 10
+    List = []
+
+    imgs = { 'pistol' : pygame.image.load('images/pistol_b.png'),
+            'shotgun' : pygame.image.load('images/shotgun_b.png'),
+            'automatic' : pygame.image.load('images/automatic_b.png') }
+
+    gun_dmg = {'pistol' : (Zombie.health / 3) + 1,
+                'shotgun' : Zombie.health / 2,
+                'automatic' : (Zombie.health / 6) + 1 }
+
+    def __init__(self, x, y, velx, vely, direction, type_):
+
+        if type_ == 'shotgun' or type_ == 'pistol':
+            try:
+                
+                dx = abs(Bullet.List[-1].x - x)
+                dy = abs(Bullet.List[-1].y - y)
+
+                if dx < 50 and dy < 50 and type_ == 'shotgun':
+                    return
+
+                if dx < 30 and dy < 30 and type_ == 'pistol':
+                    return
+
+            except: pass
+
+        self.type = type_
+        self.direction = direction
+        self.velx, self.vely = velx, vely
+
+        if direction == 'n':
+            south = pygame.transform.rotate(Bullet.imgs[type_], 90) # CCW
+            self.img = pygame.transform.flip(south, False, True)
+
+        if direction == 's':
+            self.img = pygame.transform.rotate(Bullet.imgs[type_], 90) # CCW
+
+        if direction == 'e':
+            self.img = pygame.transform.flip(Bullet.imgs[type_], True, False)
+
+        if direction == 'w':
+            self.img = Bullet.imgs[type_]
+
+        pygame.Rect.__init__(self, x, y, Bullet.width, Bullet.height)
+
+        Bullet.List.append(self)
+
+        # draw
+        # update
+        # collision --> zombies, tiles
+
+    def offscreen(self, screen):
+
+        if self.x < 0:
+            return True
+        elif self.y < 0:
+            return True
+        elif self.x + self.width > screen.get_width(): # -->
+            return True
+        elif self.y + self.height > screen.get_height():
+            return True
+        return False
+
+
+    @staticmethod
+    def super_massive_jumbo_loop(screen):
+
+        for bullet in Bullet.List:
+
+            bullet.x += bullet.velx
+            bullet.y += bullet.vely
+
+            screen.blit(bullet.img, (bullet.x , bullet.y))
+
+            if bullet.offscreen(screen):
+                Bullet.List.remove(bullet)
+                continue
+
+            for zombie in Zombie.List:
+                if bullet.colliderect(zombie):
+
+                    """
+                    The same bullet cannot be used to kill
+                    multiple zombies and as the bullet was 
+                    no longer in Bullet.List error was raised
+                    """
+
+                    zombie.health -= Bullet.gun_dmg[bullet.type]                
+                    Bullet.List.remove(bullet)
+                    break
+
+            for tile in Tile.List:
+                
+                if bullet.colliderect(tile) and not(tile.walkable):
+                    try:
+                        Bullet.List.remove(bullet)
+                    except:
+                        break # if bullet cannot be removed, then GTFO
+
+
+
+
+------------------------------------------------------------------------------------------
+Funk.py
+------------------------------------------------------------------------------------------
+
+import pygame
+
+def text_to_screen(screen, text, x, y, size = 15,
+            color = (255, 255, 255), font_type = 'monospace'):
+    try:
+        
+        text = str(text)
+        font = pygame.font.SysFont(font_type, size)
+        text = font.render(text, True, color)
+        screen.blit(text, (x, y))
+    except Exception, e:
+        print 'Font Error, saw it coming'
+        raise e
+
+------------------------------------------------------------------------------------------
+interaction.py
+------------------------------------------------------------------------------------------
+
+import pygame, sys
+from tileC import Tile
+from object_classes import Bullet
+
+def interaction(screen, survivor):
+
+    Mpos = pygame.mouse.get_pos() # [x, y] 
+    Mx = Mpos[0] / Tile.width
+    My = Mpos[1] / Tile.height
+
+    for event in pygame.event.get():
+
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for tile in Tile.List:
+                if tile.x == (Mx * Tile.width) and tile.y == (My * Tile.width):
+                    tile.type = 'solid'
+                    tile.walkable = False
+                    break
+
+        if event.type == pygame.KEYDOWN:
+
+            if event.key == pygame.K_e:
+
+                survivor.current += 1
+                survivor.current %= 3
+
+    keys = pygame.key.get_pressed()
+
+    if keys[pygame.K_w]: # North
+        future_tile_number = survivor.get_number() - Tile.V
+        if future_tile_number in range(1, Tile.total_tiles + 1):
+            future_tile = Tile.get_tile(future_tile_number)
+            if future_tile.walkable:
+                survivor.set_target(future_tile)
+                survivor.rotate('n')
+                # survivor.y -= survivor.height                   
+
+    if keys[pygame.K_s]: # South
+        future_tile_number = survivor.get_number() + Tile.V
+        if future_tile_number in range(1, Tile.total_tiles + 1):
+            future_tile = Tile.get_tile(future_tile_number)
+            if future_tile.walkable:
+                survivor.set_target(future_tile)
+                survivor.rotate('s')
+                # survivor.y += survivor.height 
+
+    if keys[pygame.K_a]: # West
+        future_tile_number = survivor.get_number() - Tile.H
+
+        if future_tile_number in range(1, Tile.total_tiles + 1):
+            future_tile = Tile.get_tile(future_tile_number)    
+            if future_tile.walkable:
+                survivor.set_target(future_tile)
+                survivor.rotate('w')
+                # survivor.x -= survivor.width 
+
+    if keys[pygame.K_d]: # East
+        future_tile_number = survivor.get_number() + Tile.H
+        if future_tile_number in range(1, Tile.total_tiles + 1):
+            future_tile = Tile.get_tile(future_tile_number)
+            if future_tile.walkable:
+                survivor.set_target(future_tile)
+                survivor.rotate('e')
+                # survivor.x += survivor.width 
+
+    if keys[pygame.K_LEFT]:
+        survivor.rotate('w')
+        Bullet(survivor.centerx, survivor.centery, -10, 0, 'w', survivor.get_bullet_type() )
+
+    elif keys[pygame.K_RIGHT]:
+        survivor.rotate('e')
+        Bullet(survivor.centerx, survivor.centery, 10, 0, 'e', survivor.get_bullet_type() )
+    
+    elif keys[pygame.K_UP]:
+        survivor.rotate('n')
+        Bullet(survivor.centerx, survivor.centery, 0, -10, 'n', survivor.get_bullet_type() )
+    
+    elif keys[pygame.K_DOWN]:
+        survivor.rotate('s')
+        Bullet(survivor.centerx, survivor.centery, 0, 10, 's', survivor.get_bullet_type() )
+
+
+
+
