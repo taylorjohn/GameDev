@@ -5,6 +5,7 @@ from tileC import Tile
 from object_classes import Bullet
 
 
+# define the interaction on screen by surivor
 def interaction(screen, survivor):
 
     for event in pygame.event.get():
@@ -12,9 +13,9 @@ def interaction(screen, survivor):
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-
+        # if a key is pressed
         if event.type == pygame.KEYDOWN:
-
+            # if keydown is the e key
             if event.key == pygame.K_e:
 
                 survivor.current += 1

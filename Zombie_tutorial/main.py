@@ -1,6 +1,5 @@
 #   Things that neeeded to be imported
 import pygame
-#import sys
 from Funk import *
 #   file that contains the tile class
 from tileC import Tile
@@ -35,35 +34,37 @@ FPS = 20
 total_frames = 0
 # loads background image dungeon
 dungeon = pygame.image.load('dungeon.jpg')
-# the player image called survivor
+# the player image called survivor 32x32 pixels
 survivor = Survivor(32*2, 32*4)
-
+# begins the while true loop
 while True:
     # screen.blit(sourceSurface, destinationRect, optionalSourceRect)
     # this draws the background image dungeon to the screen at position 0,0
     screen.blit(dungeon, (0, 0))
     #   calls the zombie character object class spawn
     Zombie.spawn(total_frames, FPS)
+
     #   calls the zombie character object class movement
     Zombie.movement()
+
     #   calls the surivor or player character object class movement
     survivor.movement()
 
+    # bullet stop after hitting zombie or going off screen
     Bullet.super_massive_jumbo_loop(screen)
-
+    # a star algo to screen, player, total frames and frames per sec
     A_Star(screen, survivor, total_frames, FPS)
+
+    # passes the interaction to the screen, player
     interaction(screen, survivor)
 
-    #draws the survivor or player to the screen
+    # draws the survivor or player to the screen
     survivor.draw(screen)
-
-    #draws the zombies to te screen
+    # draws the zombies to te screen
     Zombie.draw_zombies(screen)
-
     #   Update the full display Surface to the screen
     pygame.display.flip()
     # the clock tick is equal to the FPS frames per second 20
     clock.tick(FPS)
     # Add one to the total frames
     total_frames += 1
-    

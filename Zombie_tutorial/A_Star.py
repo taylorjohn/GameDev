@@ -63,6 +63,7 @@ def A_Star(screen, survivor, total_frames, FPS):
         elif diff in (NE, NW, SW, SE):
             tile.G = tile.parent.G + 14
 
+    #  heuristic function H is defined as the linear distance to the goal
     def H():
         for tile in Tile.List:
             tile.H = 10 * (abs(tile.x - survivor.x) + abs(tile.y - survivor.y)) / Tile.width
@@ -71,6 +72,7 @@ def A_Star(screen, survivor, total_frames, FPS):
         # F = G + H
         tile.F = tile.G + tile.H
 
+    # remove and append tile swap
     def swap(tile):
         open_list.remove(tile)
         closed_list.append(tile)
@@ -86,9 +88,10 @@ def A_Star(screen, survivor, total_frames, FPS):
         for tile in o:
             if tile.F == min(F_Values):
                 return tile
-
+     
+    # move to goal cost
     def move_to_G_cost(LFT, tile):
-
+        #goal value difference lft tiles
         GVal = 0
         diff = LFT.number - tile.number
 
