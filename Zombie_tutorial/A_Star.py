@@ -2,10 +2,10 @@ import pygame
 from tileC import Tile
 from object_classes import *
 
+
 def A_Star(screen, survivor, total_frames, FPS):
 
-    #half = int(Tile.width / 2)
-
+    # half = int(Tile.width / 2)
     N = -22
     S = 22
     E = 1
@@ -88,10 +88,10 @@ def A_Star(screen, survivor, total_frames, FPS):
         for tile in o:
             if tile.F == min(F_Values):
                 return tile
-     
+                
     # move to goal cost
     def move_to_G_cost(LFT, tile):
-        #goal value difference lft tiles
+        # goal value difference lft tiles
         GVal = 0
         diff = LFT.number - tile.number
 
