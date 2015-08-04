@@ -1,5 +1,6 @@
 # GameDev
-learning pygame tutorials and testing python34
+learning python & pygame from tutorials in python34
 
+This was William Fiset youtube tutorial thttps://www.youtube.com/playlist?list=PLDV1Zeh2NRsB1l23YFY137LtPcstXKyuQ
 
-Trying to get this tutorial to work on python34
+I did the tutorial refactored it to work in python 3.4 
