@@ -1,11 +1,11 @@
 import pygame
-from tileC import Tile
 from object_classes import *
-
+from tileC import Tile
 
 def A_Star(screen, survivor, total_frames, FPS):
+    
+    half = int(Tile.width / 2)
 
-    # half = int(Tile.width / 2)
     N = -22
     S = 22
     E = 1
@@ -26,8 +26,8 @@ def A_Star(screen, survivor, total_frames, FPS):
         return tiles
 
     def get_surrounding_tiles(base_node):
-
-        array = (
+        
+        array =(
             (base_node.number + N),
             (base_node.number + NE),
             (base_node.number + E),
@@ -35,27 +35,29 @@ def A_Star(screen, survivor, total_frames, FPS):
             (base_node.number + S),
             (base_node.number + SW),
             (base_node.number + W),
-            (base_node.number + NW)
+            (base_node.number + NW),
             )
 
         tiles = []
 
-        onn = base_node.number
+        onn = base_node.number 
         diagonals = [onn + NE, onn + NW, onn + SE, onn + SW]
 
         for tile_number in array:
+
             surrounding_tile = Tile.get_tile(tile_number)
-            if tile_number not in range(1, Tile.total_tiles + 1):
+            
+            if tile_number not in list(range(1, Tile.total_tiles + 1)):
                 continue
 
-            if (surrounding_tile.walkable and surrounding_tile not in closed_list):
+            if surrounding_tile.walkable and surrounding_tile not in closed_list:
                 # tiles.append(surrounding_tile) # Diagonal movement
                 tiles = blocky(tiles, diagonals, surrounding_tile)
 
         return tiles
 
     def G(tile):
-
+        
         diff = tile.number - tile.parent.number
 
         if diff in (N, S, E, W):
@@ -77,7 +79,7 @@ def A_Star(screen, survivor, total_frames, FPS):
         open_list.remove(tile)
         closed_list.append(tile)
 
-    def get_LFT():     # get Lowest F Value
+    def get_LFT():  # get Lowest F Value
 
         F_Values = []
         for tile in open_list:
@@ -88,10 +90,10 @@ def A_Star(screen, survivor, total_frames, FPS):
         for tile in o:
             if tile.F == min(F_Values):
                 return tile
-                
+
     # move to goal cost
     def move_to_G_cost(LFT, tile):
-        # goal value difference lft tiles
+
         GVal = 0
         diff = LFT.number - tile.number
 
@@ -117,6 +119,7 @@ def A_Star(screen, survivor, total_frames, FPS):
                 node.parent = LFT
 
             elif node in open_list:
+    
                 calculated_G = move_to_G_cost(LFT, node)
                 if calculated_G < node.G:
 
@@ -132,7 +135,7 @@ def A_Star(screen, survivor, total_frames, FPS):
             F(node)
 
         loop()
-
+        
     for zombie in Zombie.List:
 
         if zombie.tx is not None or zombie.ty is not None:
@@ -179,3 +182,145 @@ def A_Star(screen, survivor, total_frames, FPS):
         if len(return_tiles) > 1:
             next_tile = return_tiles[-1]
             zombie.set_target(next_tile)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
