@@ -1,4 +1,3 @@
-
 import pygame
 import sys
 from tileC import Tile
@@ -15,7 +14,7 @@ def interaction(screen, survivor):
             sys.exit()
         # if a key is pressed
         if event.type == pygame.KEYDOWN:
-            # if keydown is the e key
+
             if event.key == pygame.K_e:
 
                 survivor.current += 1
@@ -30,9 +29,9 @@ def interaction(screen, survivor):
             if future_tile.walkable:
                 survivor.set_target(future_tile)
                 survivor.rotate('n')
-                # survivor.y -= survivor.height
+                # survivor.y -= survivor.height               
 
-    if keys[pygame.K_s]:  # South
+    if keys[pygame.K_s]: # South
         future_tile_number = survivor.get_number() + Tile.V
         if future_tile_number in range(1, Tile.total_tiles + 1):
             future_tile = Tile.get_tile(future_tile_number)
@@ -41,7 +40,7 @@ def interaction(screen, survivor):
                 survivor.rotate('s')
                 # survivor.y += survivor.height
 
-    if keys[pygame.K_a]:    # West
+    if keys[pygame.K_a]:   # West
         future_tile_number = survivor.get_number() - Tile.H
 
         if future_tile_number in range(1, Tile.total_tiles + 1):
@@ -75,3 +74,67 @@ def interaction(screen, survivor):
     elif keys[pygame.K_DOWN]:
         survivor.rotate('s')
         Bullet(survivor.centerx, survivor.centery, 0, 10, 's', survivor.get_bullet_type())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
