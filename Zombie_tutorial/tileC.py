@@ -1,13 +1,18 @@
+import pygame
+import Funk
 
-import pygame, Funk
-
+# the tile rectangle class
 class Tile(pygame.Rect):
-
+    #list of tiles
     List = []
+    # height & width of a tile in pixels
     width, height = 32, 32
+    # number to keep track of created tiles
     total_tiles = 1
-    H, V = 1, 22 
+    # 
+    H, V = 1, 22
 
+    # tile numbers 32x32 across invalid for walking like a wall
     invalids = [1,2,3,4,5,6,7,8,10,11,12,13,14,20,21,22,
     23,26,28,29,30,32,35,36,41,44,
     45,58,59,61,62,64,66,
@@ -24,11 +29,20 @@ class Tile(pygame.Rect):
     287,288,289,290,291,292,293,294,295,296,297,298,299,
     300,301,302,303,304,305,306,307,308]
 
+    # pre init of looking for tiles to be solid or empty
+    @staticmethod
+    def pre_init(screen):
+        for y in range(0, screen.get_height(), 32):
+            for x in range(0, screen.get_width(), 32):
+                if Tile.total_tiles in Tile.invalids:
+                    Tile(x, y, 'solid')
+                else:
+                    Tile(x, y, 'empty')
 
     def __init__(self, x, y, Type):
 
         self.parent = None
-        self.H, self.G, self.F = 0,0,0
+        self.H, self.G, self.F = 0, 0, 0
 
         self.type = Type
         self.number = Tile.total_tiles
@@ -39,7 +53,8 @@ class Tile(pygame.Rect):
         else:
             self.walkable = False
 
-        pygame.Rect.__init__(self, (x, y) , (Tile.width, Tile.height) )
+        #start getting locations and adding tiles?
+        pygame.Rect.__init__(self, (x, y), (Tile.width, Tile.height))
 
         Tile.List.append(self)
 
@@ -48,23 +63,3 @@ class Tile(pygame.Rect):
         for tile in Tile.List:
             if tile.number == number:
                 return tile
-
-    @staticmethod
-    def draw_tiles(screen):
-        half = Tile.width / 2
-
-        for tile in Tile.List:
-
-            pass
-
-            # if not(tile.type == 'empty'):
-            #     pygame.draw.rect(screen, [40, 40, 40], tile )
-
-            # if tile.G != 0:
-            #   Funk.text_to_screen(screen, tile.G, tile.x, tile.y + half, color = [120, 157, 40])
-            # if tile.H != 0:
-            #   Funk.text_to_screen(screen, tile.H, tile.x + half, tile.y + half, color = [20 , 67, 150])
-            # if tile.F != 0:
-            #   Funk.text_to_screen(screen, tile.F, tile.x + half, tile.y, color = [56, 177, 177])
-
-            # Funk.text_to_screen(screen, tile.number, tile.x, tile.y)
